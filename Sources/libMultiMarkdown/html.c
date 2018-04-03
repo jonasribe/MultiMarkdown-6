@@ -676,9 +676,15 @@ void mmd_export_token_html(DString * out, const char * source, token * t, scratc
 			if (scratch->extensions & EXT_NO_LABELS) {
 				printf("<h%1d>", temp_short + scratch->base_header_level - 1);
 			} else {
-				temp_char = label_from_header(source, t);
-				printf("<h%1d id=\"%s\">", temp_short + scratch->base_header_level - 1, temp_char);
-				free(temp_char);
+                temp_char = label_from_header(source, t);
+                //By default the id of headers with links will include both the link and the text (id=text+link), for page-links (h4) in Highlights we want to limit this to the text only to keep the links short and predictable
+                char *match = strstr(temp_char, "highlights:");
+                if ((temp_short + scratch->base_header_level - 1 == 4) && (match != NULL)) {
+                    printf("<h%1d id=\"%.*s\">", temp_short + scratch->base_header_level - 1, match-temp_char, temp_char);
+                } else {
+                    printf("<h%1d id=\"%s\">", temp_short + scratch->base_header_level - 1, temp_char);
+                }
+                free(temp_char);
 			}
 
 			mmd_export_token_tree_html(out, source, t->child, scratch);
