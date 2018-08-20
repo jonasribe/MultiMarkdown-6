@@ -1511,23 +1511,22 @@ parse_citation:
 					temp_char = my_strdup("");
 				}
 
-				// Classify this use
-				temp_short2 = scratch->used_citations->size;
-				citation_from_bracket(source, scratch, t, &temp_short);
-
-				if (temp_short == -1) {
-					// This instance is not properly formed
-					print_const("[#");
-					mmd_export_token_tree_html(out, source, t->child->next, scratch);
-					print_const("]");
-
-					free(temp_char);
-					break;
-				}
-
+                // Classify this use, but only if "not cited"
 				if (temp_bool) {
 					// This is a regular citation
-
+                    temp_short2 = scratch->used_citations->size;
+                    citation_from_bracket(source, scratch, t, &temp_short);
+                    
+                    if (temp_short == -1) {
+                        // This instance is not properly formed
+                        print_const("[#");
+                        mmd_export_token_tree_html(out, source, t->child->next, scratch);
+                        print_const("]");
+                        
+                        free(temp_char);
+                        break;
+                    }
+                    
 					if (temp_char[0] == '\0') {
 						// No locator
 
