@@ -677,11 +677,32 @@ void mmd_export_token_html(DString * out, const char * source, token * t, scratc
 				printf("<h%1d>", temp_short + scratch->base_header_level - 1);
 			} else {
                 temp_char = label_from_header(source, t);
-                //By default the id of headers with links will include both the link and the text (id=text+link), for page-links (h4) in Highlights we want to limit this to the text only to keep the links short and predictable
+
+                // By default the id of headers will be the sanitized link text followed by the href link
+                // e.g. <h3 id="phdthesishttps:jonasribe.com"><a href="https://jonasribe.com">PhD Thesis</a></h3>
+                //
+                // For page-links (h4) in Highlights we want to ignore the text and only use the page index in the id:
+                // e.g. <h4 id="page11"><a href="highlights://Thesis_anno#page=11">Page ix</a></h4>
+                //
+                // The page index is unique and can give us a a short, readable and predictable anchor. Page labels
+                // are what is visible to the user, but can be the same for multiple pages in one document, and should
+                // therefore not be used behind the scenes.
+                //
+                // We therefore strip the prefix text first by matching the "highlights:" url-scheme
+                // (if not NULL match returns the "highlights:" + remainder of temp_char):
                 char *match = strstr(temp_char, "highlights:");
                 if ((temp_short + scratch->base_header_level - 1 == 4) && (match != NULL)) {
-                    printf("<h%1d id=\"%.*s\">", temp_short + scratch->base_header_level - 1, match-temp_char, temp_char);
+                    // We look for a page anchor in the remainder string (offset 11 characters):
+                    char *anchor_match = strstr(match + 11, "page");
+                    if ((temp_short + scratch->base_header_level - 1 == 4) && (anchor_match != NULL)) {
+                        // if we find a page anchor we use it ("page" + remainder)
+                        printf("<h%1d id=\"%s\">", temp_short + scratch->base_header_level - 1, anchor_match);
+                    } else {
+                        // if not, we use the whole link without the "highlights:" prefix
+                        printf("<h%1d id=\"%s\">", temp_short + scratch->base_header_level - 1, match + 11);
+                    }
                 } else {
+                    // if it is not an internal link, we let it be
                     printf("<h%1d id=\"%s\">", temp_short + scratch->base_header_level - 1, temp_char);
                 }
                 free(temp_char);
